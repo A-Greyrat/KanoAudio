@@ -24,7 +24,7 @@ using namespace KanoAudio;
 
 int main()
 {
-    std::shared_ptr<Audio> audio = Audio::create();
+    std::shared_ptr<Audio> audio = Audio::Create();
     audio->Load<MP3Decoder>("test.mp3");
     // audio->Load<OGGDecoder>("test.ogg");
     
