@@ -28,7 +28,7 @@ namespace KanoAudio
 
     void Audio::Play() const
     {
-        if (IsPlaying())
+        if (IsPlaying() || size_ == 0)
             return;
 
         if (!IsPaused())
