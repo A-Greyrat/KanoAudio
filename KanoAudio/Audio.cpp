@@ -6,11 +6,14 @@
 
 namespace
 {
+    ALCdevice *device = nullptr;
+    ALCcontext *context = nullptr;
+
 #ifndef NO_CREATE_OPENAL_DEVICE_AND_CONTEXT
     [[maybe_unused]]
     int INIT_OPENAL = [] {
-        auto device = alcOpenDevice(nullptr);
-        auto context = alcCreateContext(device, nullptr);
+        device = alcOpenDevice(nullptr);
+        context = alcCreateContext(device, nullptr);
         alcMakeContextCurrent(context);
         return 0;
     }();
@@ -126,5 +129,12 @@ namespace KanoAudio
     std::shared_ptr<Audio> Audio::Create()
     {
         return std::shared_ptr<Audio>(new Audio);
+    }
+
+    void ShutdownOpenAL()
+    {
+        alcMakeContextCurrent(nullptr);
+        alcDestroyContext(context);
+        alcCloseDevice(device);
     }
 }

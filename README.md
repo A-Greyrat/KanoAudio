@@ -19,17 +19,21 @@ supporting the following formats:
 #include "KanoAudio/OGGDecoder.h"
 #include "KanoAudio/WAVDecoder.h"
 
-
 using namespace KanoAudio;
 
 int main()
 {
-    std::shared_ptr<Audio> audio = Audio::Create();
+    auto audio = Audio::Create();
     audio->Load<MP3Decoder>("test.mp3");
     // audio->Load<OGGDecoder>("test.ogg");
     
     audio->Play();
-    
+    while (audio->IsPlaying())
+    {
+        Sleep(100);
+        // ...
+    }
+        
     /*
     audio->Pause();
     audio->Stop();
@@ -38,6 +42,8 @@ int main()
     audio->SetLooping(true);
     ...
     */
+    
+    ShutdownOpenAL();
 }
 
 ```

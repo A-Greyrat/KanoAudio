@@ -23,9 +23,8 @@ int main()
     //audio->Load<PCMDecoder>("C:\\Users\\21129\\Desktop\\LiSA (织部里沙) - unlasting.pcm");
     //audio->Load<WAVDecoder>("C:\\Users\\21129\\Desktop\\YOASOBI-_ヨアソビ_-夜に駆ける-_奔向黑夜_.wav");
     //audio->Load<OGGDecoder>("C:\\Users\\21129\\Desktop\\YOASOBI-_ヨアソビ_-群青.ogg");
-
-    audio->Load<FLACDecoder>("C:\\Users\\21129\\Music\\米津玄師 (よねづ けんし) - LOSER.flac");
-
+    //audio->Load<FLACDecoder>("C:\\Users\\21129\\Music\\米津玄師 (よねづ けんし) - LOSER.flac");
+    audio->Load<MP3Decoder>("C:\\Users\\21129\\Desktop\\KICK BACK.mp3");
 
     // glfw: initialize and configure
     // ------------------------------
@@ -147,6 +146,7 @@ int main()
             break;
     }
 
+    ShutdownOpenAL();
 
     return 0;
 
