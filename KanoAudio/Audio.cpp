@@ -58,7 +58,7 @@ namespace KanoAudio
 
     void Audio::Stop() const
     {
-        if (!IsPlaying())
+        if (!IsPlaying() && !IsPaused())
             return;
 
         alSourceStop(source_);

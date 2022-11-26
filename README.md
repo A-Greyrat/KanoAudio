@@ -9,7 +9,7 @@ supporting the following formats:
 * OGG
 * WAV
 * PCM (16 bit, 44.1kHz, stereo)
-* FLAC
+* FLAC (16 bit, stereo)
 ```
 ## Exmaple
 ![img.png](img.png)
