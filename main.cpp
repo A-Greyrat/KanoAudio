@@ -208,8 +208,8 @@ int main()
             break;
     }
 
+    audio->Unload();
+
     ShutdownOpenAL();
-
     return 0;
-
 }

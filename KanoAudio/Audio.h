@@ -57,6 +57,7 @@ namespace KanoAudio
         void Play() const;
         void Pause() const;
         void Stop() const;
+        void Unload();
 
         void SetVolume(float volume);
         void SetPitch(float pitch);
@@ -70,6 +71,7 @@ namespace KanoAudio
         [[nodiscard]] bool IsPaused() const;
         [[nodiscard]] double GetDuration() const;
         [[nodiscard]] double GetCurrentTime() const;
+        [[nodiscard]] bool IsLoaded() const;
 
         template <class T, class = typename std::enable_if<std::is_base_of_v<IAudioDecoder, T>>::type>
         void Load(const char* path)
@@ -77,6 +79,14 @@ namespace KanoAudio
             T decoder;
             if (decoder.Decode(path))
                 fprintf(stderr, "Failed to decode audio file");
+
+            if (IsLoaded())
+            {
+                Stop();
+
+                alDeleteSources(1, &source_);
+                alDeleteBuffers(1, &buffer_);
+            }
 
             size_ = decoder.GetSize();
             frequency_ = decoder.GetFrequency();
@@ -86,7 +96,7 @@ namespace KanoAudio
             alGenBuffers(1, &buffer_);
             alBufferData(buffer_, decoder.GetFormat(), decoder.GetData().get(), size_, frequency_);
             alGenSources(1, &source_);
-            alSourcei(source_, AL_BUFFER, (ALint)buffer_);
+            alSourcei(source_, AL_BUFFER, (ALint) buffer_);
         }
     };
 

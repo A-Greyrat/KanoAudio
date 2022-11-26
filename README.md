@@ -46,6 +46,10 @@ int main()
     ...
     */
     
+    // if you not call this, the audio will be released when shared_ptr is destroyed.
+    // but when openal shutdown, it will detect you not release the audio, and print a warning.
+    // so better call this.
+    audio->Unload();
     ShutdownOpenAL();
 }
 
