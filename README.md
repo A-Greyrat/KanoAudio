@@ -11,6 +11,9 @@ supporting the following formats:
 * PCM (16 bit, 44.1kHz, stereo)
 * FLAC
 ```
+## Exmaple
+![img.png](img.png)
+
 ## Usage
 
 ```c++

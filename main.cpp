@@ -20,11 +20,6 @@ using namespace KanoAudio;
 int main()
 {
     auto audio = Audio::Create();
-    //audio->Load<PCMDecoder>("C:\\Users\\21129\\Desktop\\LiSA (织部里沙) - unlasting.pcm");
-    //audio->Load<WAVDecoder>("C:\\Users\\21129\\Desktop\\YOASOBI-_ヨアソビ_-夜に駆ける-_奔向黑夜_.wav");
-    //audio->Load<OGGDecoder>("C:\\Users\\21129\\Desktop\\YOASOBI-_ヨアソビ_-群青.ogg");
-    //audio->Load<FLACDecoder>("C:\\Users\\21129\\Music\\米津玄師 (よねづ けんし) - LOSER.flac");
-    audio->Load<MP3Decoder>("C:\\Users\\21129\\Desktop\\KICK BACK.mp3");
 
     // glfw: initialize and configure
     // ------------------------------
@@ -64,6 +59,8 @@ int main()
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
+    // utf-8 font
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 18.0f, nullptr, io.Fonts->GetGlyphRangesChineseFull());
 
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -124,6 +121,71 @@ int main()
         {
             audio->SetLooping(isLoop);
         }
+
+        static char buffer[256] = { 0 };
+        ImGui::InputText("Path", buffer, 256);
+
+        static bool isPCM = false;
+        static bool isWAV = false;
+        static bool isMP3 = false;
+        static bool isOGG = false;
+        static bool isFLAC = false;
+        // single select
+        if (ImGui::Checkbox("PCM", &isPCM))
+        {
+            isWAV = false;
+            isMP3 = false;
+            isOGG = false;
+            isFLAC = false;
+        }
+        ImGui::SameLine();
+        if (ImGui::Checkbox("WAV", &isWAV))
+        {
+            isPCM = false;
+            isMP3 = false;
+            isOGG = false;
+            isFLAC = false;
+        }
+        ImGui::SameLine();
+        if (ImGui::Checkbox("MP3", &isMP3))
+        {
+            isPCM = false;
+            isWAV = false;
+            isOGG = false;
+            isFLAC = false;
+        }
+        ImGui::SameLine();
+        if (ImGui::Checkbox("OGG", &isOGG))
+        {
+            isPCM = false;
+            isWAV = false;
+            isMP3 = false;
+            isFLAC = false;
+        }
+        ImGui::SameLine();
+        if (ImGui::Checkbox("FLAC", &isFLAC))
+        {
+            isPCM = false;
+            isWAV = false;
+            isMP3 = false;
+            isOGG = false;
+        }
+
+
+        if (ImGui::Button("Load"))
+        {
+            if (isPCM)
+                audio->Load<PCMDecoder>(buffer);
+            else if (isWAV)
+                audio->Load<WAVDecoder>(buffer);
+            else if (isMP3)
+                audio->Load<MP3Decoder>(buffer);
+            else if (isOGG)
+                audio->Load<OGGDecoder>(buffer);
+            else if (isFLAC)
+                audio->Load<FLACDecoder>(buffer);
+        }
+
 
         ImGui::End();
 
