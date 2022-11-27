@@ -100,7 +100,6 @@ namespace KanoAudio
         }
     };
 
-    void ShutdownOpenAL();
 }
 
 #endif //ADARION_AUDIO_H

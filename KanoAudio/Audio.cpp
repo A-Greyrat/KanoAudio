@@ -6,20 +6,30 @@
 
 namespace
 {
+#ifndef NO_CREATE_OPENAL_DEVICE_AND_CONTEXT
     ALCdevice *device = nullptr;
     ALCcontext *context = nullptr;
 
-#ifndef NO_CREATE_OPENAL_DEVICE_AND_CONTEXT
-    [[maybe_unused]]
+    __attribute__((unused))
     int INIT_OPENAL = [] {
         device = alcOpenDevice(nullptr);
         context = alcCreateContext(device, nullptr);
         alcMakeContextCurrent(context);
         return 0;
     }();
+
+    __attribute__((unused))
+    struct CLOSE_OPENAL
+    {
+        ~CLOSE_OPENAL()
+        {
+            alcMakeContextCurrent(nullptr);
+            alcDestroyContext(context);
+            alcCloseDevice(device);
+        }
+    } close_openal;
 #endif
 }
-
 
 namespace KanoAudio
 {
@@ -163,10 +173,4 @@ namespace KanoAudio
         }
     }
 
-    void ShutdownOpenAL()
-    {
-        alcMakeContextCurrent(nullptr);
-        alcDestroyContext(context);
-        alcCloseDevice(device);
-    }
 }
