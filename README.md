@@ -58,6 +58,7 @@ Please install the following libraries in vcpkg or your own way:
 * libmpg123 (vcpkg install mpg123)
 * OpenAL (vcpkg install openal-soft)
 * libflac (vcpkg install libflac)
+* libsndfile (vcpkg install libsndfile)
 
 if you want to use the examples, please install the following libraries:
 * glfw3 (vcpkg install glfw3)

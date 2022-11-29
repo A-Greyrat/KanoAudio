@@ -3,92 +3,71 @@
 //
 
 extern "C" {
-    #include <AL/al.h>
+#include <AL/al.h>
+#include <AL/alext.h>
 };
 
 #include "WAVDecoder.h"
+#include <sndfile.h>
 
-namespace
-{
-    // wav file header
-    struct WAVHeader
-    {
-        char riff[4]; // "RIFF"
-        int32_t size; // file size - 8
-        char wave[4]; // "WAVE"
-        char fmt[4]; // "fmt "
-        int32_t fmtSize; // 16
-        int16_t format; // 1
-        int16_t channels; // 1
-        int32_t frequency; // 8000
-        int32_t bytesPerSecond; // 16000
-        int16_t bytesPerSample; // 2
-        int16_t bitsPerSample; // 16
-        char data[4]; // "data"
-        int32_t dataSize; // file size - 44
-    };
-}
+namespace KanoAudio {
 
-namespace KanoAudio
-{
-
-    int WAVDecoder::Decode(const char *path)
-    {
-        FILE *file = fopen(path, "rb");
-        if (file == nullptr)
+    int WAVDecoder::Decode(const char *path) {
+        SF_INFO sfinfo;
+        SNDFILE *sndfile = sf_open(path, SFM_READ, &sfinfo);
+        if (sndfile == nullptr)
             return -1;
 
-        WAVHeader header{};
-        fread(&header, sizeof(WAVHeader), 1, file);
+        frequency_ = sfinfo.samplerate;
+        channels_ = sfinfo.channels;
+        switch (sfinfo.format) {
+            case SF_FORMAT_WAV | SF_FORMAT_PCM_16:
+                format_ = channels_ > 1 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
+                bitsPerSample_ = 16;
+                break;
+            case SF_FORMAT_WAV | SF_FORMAT_PCM_24:
+                format_ = channels_ > 1 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
+                bitsPerSample_ = 24;
+                break;
+            case SF_FORMAT_WAV | SF_FORMAT_PCM_32:
+                format_ = channels_ > 1 ? AL_FORMAT_STEREO16 : AL_FORMAT_MONO16;
+                bitsPerSample_ = 32;
+                break;
+            case SF_FORMAT_WAV | SF_FORMAT_PCM_U8:
+                format_ = channels_ > 1 ? AL_FORMAT_STEREO8 : AL_FORMAT_MONO8;
+                bitsPerSample_ = 8;
+                break;
+            case SF_FORMAT_WAV | SF_FORMAT_FLOAT:
+                format_ = channels_ > 1 ? AL_FORMAT_STEREO_FLOAT32 : AL_FORMAT_MONO_FLOAT32;
+                bitsPerSample_ = 32;
+                break;
+            case SF_FORMAT_WAV | SF_FORMAT_DOUBLE:
+                format_ = channels_ > 1 ? AL_FORMAT_STEREO_DOUBLE_EXT : AL_FORMAT_MONO_DOUBLE_EXT;
+                bitsPerSample_ = 64;
+                break;
+            default:
+                return -1;
+        }
 
-        size_ = header.size;
-        frequency_ = header.frequency;
-        channels_ = header.channels;
-        bitsPerSample_ = header.bitsPerSample;
-
+        size_ = sfinfo.frames * channels_ * (bitsPerSample_ >> 3);
         data_ = std::shared_ptr<uint8_t[]>(new uint8_t[size_]);
 
-        // 44 is the size of WAVHeader, header.dataSize is the size of extra data
-        // 4 is the size of "data", 4 is the data chunk size
-        fseek(file, 44 + header.dataSize + 4 + 4, SEEK_SET);
-        fread(data_.get(), size_, 1, file);
-        fclose(file);
-
-        if (channels_ == 1)
-            format_ = bitsPerSample_ == 8 ? AL_FORMAT_MONO8 : AL_FORMAT_MONO16;
-        else if (channels_ == 2)
-            format_ = bitsPerSample_ == 8 ? AL_FORMAT_STEREO8 : AL_FORMAT_STEREO16;
+        // read data
+        sf_readf_short(sndfile, (short *)data_.get(), sfinfo.frames);
+        sf_close(sndfile);
 
         return 0;
     }
 
-    std::size_t WAVDecoder::GetSize() const
-    {
-        return size_;
-    }
+    std::size_t WAVDecoder::GetSize() const { return size_; }
 
-    unsigned int WAVDecoder::GetFrequency() const
-    {
-        return frequency_;
-    }
+    unsigned int WAVDecoder::GetFrequency() const { return frequency_; }
 
-    unsigned int WAVDecoder::GetChannels() const
-    {
-        return channels_;
-    }
+    unsigned int WAVDecoder::GetChannels() const { return channels_; }
 
-    unsigned int WAVDecoder::GetBitsPerSample() const
-    {
-        return bitsPerSample_;
-    }
+    unsigned int WAVDecoder::GetBitsPerSample() const { return bitsPerSample_; }
 
-    std::shared_ptr<uint8_t[]> WAVDecoder::GetData() const
-    {
-        return data_;
-    }
+    std::shared_ptr<uint8_t[]> WAVDecoder::GetData() const { return data_; }
 
-    int WAVDecoder::GetFormat() const
-    {
-        return format_;
-    }
-}
+    int WAVDecoder::GetFormat() const { return format_; }
+} // namespace KanoAudio
