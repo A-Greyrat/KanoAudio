@@ -4,96 +4,62 @@
 
 extern "C" {
 #include <AL/al.h>
+#include <AL/alext.h>
 };
 
 #include "FLACDecoder.h"
-
-namespace
-{
-    void error_callback(const FLAC__StreamDecoder *decoder, FLAC__StreamDecoderErrorStatus status, void *client_data)
-    {
-        fprintf(stderr, "Got error callback: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
-    }
-}
-
+#include "sndfile.h"
 
 namespace KanoAudio
 {
-
-    void FLACDecoder::MetadataCallback(const FLAC__StreamDecoder *decoder, const FLAC__StreamMetadata *metadata,
-                                       void *client_data)
-    {
-        auto *flacDecoder = static_cast<FLACDecoder *>(client_data);
-        flacDecoder->size_ = metadata->data.stream_info.total_samples * metadata->data.stream_info.channels *
-                             (metadata->data.stream_info.bits_per_sample / 8);
-        flacDecoder->frequency_ = metadata->data.stream_info.sample_rate;
-        flacDecoder->channels_ = metadata->data.stream_info.channels;
-        flacDecoder->bitsPerSample_ = metadata->data.stream_info.bits_per_sample;
-        flacDecoder->data_ = std::shared_ptr<uint8_t[]>(new uint8_t[flacDecoder->size_]);
-        flacDecoder->format_ = flacDecoder->channels_ == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
-    }
-
-    FLAC__StreamDecoderWriteStatus
-    FLACDecoder::WriteCallback(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,
-                               const FLAC__int32 *const *buffer, void *client_data)
-    {
-        auto *flacDecoder = static_cast<FLACDecoder *>(client_data);
-        auto *data = flacDecoder->data_.get();
-
-        for (int i = 0, j = 0; i < frame->header.blocksize; i++)
-        {
-            data[flacDecoder->offset_++] = (uint8_t) (buffer[0][i] & 0xFF);
-            data[flacDecoder->offset_++] = (uint8_t) ((buffer[0][i] >> 8) & 0xFF);
-            if (flacDecoder->channels_ == 2)
-            {
-                data[flacDecoder->offset_++] = (uint8_t) (buffer[1][i] & 0xFF);
-                data[flacDecoder->offset_++] = (uint8_t) ((buffer[1][i] >> 8) & 0xFF);
-            }
-        }
-
-        return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
-    }
-
     int FLACDecoder::Decode(const char *path)
     {
-        // Create a FLAC__StreamDecoder
-        FLAC__StreamDecoder *decoder = FLAC__stream_decoder_new();
-        if (decoder == nullptr)
+        // snd lib
+        SF_INFO sfinfo;
+        SNDFILE *sndfile = sf_open(path, SFM_READ, &sfinfo);
+        if (sndfile == nullptr)
         {
-            fprintf(stderr, "Failed to create decoder\n");
+            fprintf(stderr, "Failed to open file: %s (%s)\n", path, sf_strerror(sndfile));
             return -1;
         }
 
-        FLAC__stream_decoder_set_md5_checking(decoder, true);
+        // snd
+        this->frequency_ = sfinfo.samplerate;
+        this->channels_ = sfinfo.channels;
 
-        // Initialize the decoder
-        FLAC__StreamDecoderInitStatus status =
-                FLAC__stream_decoder_init_file(decoder, path, WriteCallback, MetadataCallback,
-                                               [](const FLAC__StreamDecoder *decoder,
-                                                  FLAC__StreamDecoderErrorStatus status, void *client_data) {
-                                                   fprintf(stderr, "Got error callback: %s\n",
-                                                           FLAC__StreamDecoderErrorStatusString[status]);
-                                               }, this);
-
-        // Check the status
-        if (status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
+        switch (sfinfo.format)
         {
-            FLAC__stream_decoder_delete(decoder);
-            fprintf(stderr, "Got error while initializing decoder: %s\n",
-                    FLAC__StreamDecoderInitStatusString[status]);
-            return -1;
+            case SF_FORMAT_FLAC | SF_FORMAT_PCM_16:
+                this->format_ = this->channels_ == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+                this->bitsPerSample_ = 16;
+                break;
+            case SF_FORMAT_FLAC | SF_FORMAT_PCM_24:
+                this->format_ = this->channels_ == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+                this->bitsPerSample_ = 24;
+                break;
+            case SF_FORMAT_FLAC | SF_FORMAT_PCM_32:
+                this->format_ = this->channels_ == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+                this->bitsPerSample_ = 32;
+                break;
+            case SF_FORMAT_FLAC | SF_FORMAT_PCM_U8:
+                this->format_ = this->channels_ == 1 ? AL_FORMAT_MONO8 : AL_FORMAT_STEREO8;
+                this->bitsPerSample_ = 8;
+                break;
+            case SF_FORMAT_FLAC | SF_FORMAT_FLOAT:
+                this->format_ = this->channels_ == 1 ? AL_FORMAT_MONO_FLOAT32 : AL_FORMAT_STEREO_FLOAT32;
+                this->bitsPerSample_ = 32;
+                break;
+            case SF_FORMAT_FLAC | SF_FORMAT_DOUBLE:
+                this->format_ = this->channels_ == 1 ? AL_FORMAT_MONO_DOUBLE_EXT : AL_FORMAT_STEREO_DOUBLE_EXT;
+                this->bitsPerSample_ = 64;
+                break;
         }
 
-        // Decode the file
-        if (!FLAC__stream_decoder_process_until_end_of_stream(decoder))
-        {
-            FLAC__stream_decoder_delete(decoder);
-            fprintf(stderr, "Got error while decoding file: %s\n",
-                    FLAC__StreamDecoderStateString[FLAC__stream_decoder_get_state(decoder)]);
-            return -1;
-        }
+        this->size_ = sfinfo.frames * this->channels_ * (this->bitsPerSample_ >> 3);
+        this->data_ = std::shared_ptr<uint8_t[]>(new uint8_t[this->size_]);
 
-        FLAC__stream_decoder_delete(decoder);
+        sf_readf_short(sndfile, (short *) this->data_.get(), sfinfo.frames);
+        sf_close(sndfile);
 
         return 0;
     }

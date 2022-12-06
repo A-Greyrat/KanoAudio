@@ -5,10 +5,6 @@
 #ifndef ADARION_FLACDECODER_H
 #define ADARION_FLACDECODER_H
 
-extern "C" {
-    #include <FLAC/all.h>
-};
-
 #include "IAudioDecoder.h"
 
 namespace KanoAudio
@@ -23,8 +19,6 @@ namespace KanoAudio
         std::shared_ptr<uint8_t[]> data_ = nullptr;
         int format_ = 0;
 
-        int offset_ = 0;
-
     public:
         FLACDecoder() = default;
         FLACDecoder(const FLACDecoder &decoder) = delete;
@@ -32,10 +26,6 @@ namespace KanoAudio
         FLACDecoder(FLACDecoder &&decoder) noexcept = default;
         FLACDecoder &operator=(FLACDecoder &&decoder) noexcept = default;
         ~FLACDecoder() override = default;
-
-    private:
-        static void MetadataCallback(const FLAC__StreamDecoder *decoder, const FLAC__StreamMetadata *metadata, void *client_data);
-        static FLAC__StreamDecoderWriteStatus WriteCallback(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame, const FLAC__int32 * const buffer[], void *client_data);
 
     public:
         int Decode(const char *path) override;

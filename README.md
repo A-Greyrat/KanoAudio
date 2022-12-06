@@ -9,7 +9,7 @@ supporting the following formats:
 * OGG
 * WAV
 * PCM (16 bit, 44.1kHz, stereo)
-* FLAC (16 bit, stereo)
+* FLAC
 ```
 ## Exmaple
 ![img.png](img.png)
@@ -57,7 +57,6 @@ Please install the following libraries in vcpkg or your own way:
 * libvorbisfile (vcpkg install libvorbis)
 * libmpg123 (vcpkg install mpg123)
 * OpenAL (vcpkg install openal-soft)
-* libflac (vcpkg install libflac)
 * libsndfile (vcpkg install libsndfile)
 
 if you want to use the examples, please install the following libraries:

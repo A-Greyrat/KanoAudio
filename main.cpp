@@ -105,7 +105,7 @@ int main()
 
 
         float volume = audio->GetVolume();
-        if (ImGui::SliderFloat("Volume", &volume, 0.0f, 1.0f))
+        if (ImGui::SliderFloat("Volume", &volume, 0.0f, 2.0f))
         {
             audio->SetVolume(volume);
         }

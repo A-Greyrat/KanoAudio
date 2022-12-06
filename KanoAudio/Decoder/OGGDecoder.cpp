@@ -8,6 +8,8 @@ extern "C" {
 
 #include "OGGDecoder.h"
 
+#include <sndfile.h>
+#include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
 
 namespace KanoAudio
