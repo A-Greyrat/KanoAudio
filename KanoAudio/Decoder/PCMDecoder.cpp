@@ -17,7 +17,10 @@ namespace KanoAudio
         // We just need to read the file and get the data.
         FILE *file = fopen(path, "rb");
         if (file == nullptr)
+        {
+            KANO_AUDIO_LOG("[PCMDecoder]: Failed to open file: %s\n", path);
             return -1;
+        }
 
         fseek(file, 0, SEEK_END);
         size_ = ftell(file);
@@ -28,16 +31,9 @@ namespace KanoAudio
 
         fclose(file);
 
-        // PCM frequency is 44100
         frequency_ = 44100;
-
-        // PCM channels is 2
         channels_ = 2;
-
-        // PCM bits per sample is 16
         bitsPerSample_ = 16;
-
-        // PCM format is AL_FORMAT_STEREO16
         format_ = AL_FORMAT_STEREO16;
 
         return 0;

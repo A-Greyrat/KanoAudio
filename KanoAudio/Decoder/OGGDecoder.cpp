@@ -3,7 +3,7 @@
 //
 
 extern "C" {
-    #include <AL/al.h>
+#include <AL/al.h>
 }
 
 #include "OGGDecoder.h"
@@ -17,14 +17,18 @@ namespace KanoAudio
     int OGGDecoder::Decode(const char *path)
     {
         // Open the file
-        FILE * file = fopen(path, "rb");
+        FILE *file = fopen(path, "rb");
         if (file == nullptr)
+        {
+            KANO_AUDIO_LOG("[OGGDecoder]: Failed to open file: %s\n", path);
             return -1;
+        }
 
         // Create a OggVorbis_File
         OggVorbis_File oggFile;
         if (ov_open(file, &oggFile, nullptr, 0) < 0)
         {
+            KANO_AUDIO_LOG("[OGGDecoder]: Failed to open OggVorbis_File: %s\n", path);
             fclose(file);
             return -1;
         }
@@ -33,24 +37,16 @@ namespace KanoAudio
         vorbis_info *info = ov_info(&oggFile, -1);
         if (info == nullptr)
         {
+            KANO_AUDIO_LOG("[OGGDecoder]: Failed to get the info of the file: %s\n", path);
             ov_clear(&oggFile);
             fclose(file);
             return -1;
         }
 
-        // Get the size of the file
         size_ = ov_pcm_total(&oggFile, -1) * info->channels * 2;
-
-        // Get the frequency of the file
         frequency_ = info->rate;
-
-        // Get the channels of the file
         channels_ = info->channels;
-
-        // Get the bits per sample of the file
         bitsPerSample_ = 16;
-
-        // Get the format of the file
         format_ = channels_ == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
 
         // Get the data of the file
@@ -68,7 +64,7 @@ namespace KanoAudio
                 break;
         }
 
-        // Close the file
+
         ov_clear(&oggFile);
 
         return 0;

@@ -27,9 +27,14 @@ using namespace KanoAudio;
 int main()
 {
     auto audio = Audio::Create();
-    audio->Load<MP3Decoder>("test.mp3");
+    auto future = audio->LoadAsync<MP3Decoder>("test.mp3");
     // audio->Load<OGGDecoder>("test.ogg");
     
+    // do something else
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    
+    future.wait();
+        
     audio->Play();
     while (audio->IsPlaying())
     {
@@ -71,5 +76,5 @@ if you want to use the examples, please install the following libraries:
 * add more formats
 * add more examples
 * add more tests
-* async loading
+* async loading (√)
 ```

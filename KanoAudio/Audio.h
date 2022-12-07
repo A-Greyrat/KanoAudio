@@ -13,8 +13,10 @@ extern "C" {
 #include <cstddef>
 #include <memory>
 #include <mutex>
+#include <future>
 
 #include "Decoder/IAudioDecoder.h"
+// push your own log system here
 
 namespace KanoAudio
 {
@@ -38,6 +40,7 @@ namespace KanoAudio
 
         bool isLooping_ = false;
 
+        mutable std::mutex mutex_;
     private:
         Audio() = default;
 
@@ -45,8 +48,8 @@ namespace KanoAudio
         Audio(const Audio &audio) = delete;
         Audio &operator=(const Audio &audio) = delete;
 
-        Audio(Audio &&audio) noexcept = default;
-        Audio &operator=(Audio &&audio) noexcept = default;
+        Audio(Audio &&audio) noexcept = delete;
+        Audio &operator=(Audio &&audio) noexcept = delete;
 
         ~Audio();
 
@@ -78,7 +81,7 @@ namespace KanoAudio
         {
             T decoder;
             if (decoder.Decode(path))
-                fprintf(stderr, "Failed to decode audio file");
+                return;
 
             if (IsLoaded())
             {
@@ -97,6 +100,36 @@ namespace KanoAudio
             alBufferData(buffer_, decoder.GetFormat(), decoder.GetData().get(), size_, frequency_);
             alGenSources(1, &source_);
             alSourcei(source_, AL_BUFFER, (ALint) buffer_);
+        }
+
+        template <class T, class = typename std::enable_if<std::is_base_of_v<IAudioDecoder, T>>::type>
+        std::future<void> LoadAsync(const char* path)
+        {
+            return std::async(std::launch::async, [this, path]()
+            {
+                T decoder;
+                if (decoder.Decode(path))
+                    return;
+
+                if (IsLoaded())
+                {
+                    Stop();
+
+                    alDeleteSources(1, &source_);
+                    alDeleteBuffers(1, &buffer_);
+                }
+
+                std::lock_guard<std::mutex> lock(mutex_);
+                size_ = decoder.GetSize();
+                frequency_ = decoder.GetFrequency();
+                channels_ = decoder.GetChannels();
+                bitsPerSample_ = decoder.GetBitsPerSample();
+
+                alGenBuffers(1, &buffer_);
+                alBufferData(buffer_, decoder.GetFormat(), decoder.GetData().get(), size_, frequency_);
+                alGenSources(1, &source_);
+                alSourcei(source_, AL_BUFFER, (ALint) buffer_);
+            });
         }
     };
 

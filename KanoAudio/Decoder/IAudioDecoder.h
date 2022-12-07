@@ -5,6 +5,9 @@
 #ifndef ADARION_IAUDIODECODER_H
 #define ADARION_IAUDIODECODER_H
 
+/* You can use your own logger replace this */
+#define KANO_AUDIO_LOG(ERROR, ...) fprintf(stderr, ERROR, __VA_ARGS__)
+
 #include <memory>
 #include <string>
 

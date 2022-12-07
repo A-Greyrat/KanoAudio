@@ -1,5 +1,3 @@
-#define IMGUI_IMPL_OPENGL_LOADER_GLAD
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -30,7 +28,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Kano Kano", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(800, 600, "Kano Kano", nullptr, nullptr);
     if (window == nullptr)
     {
         std::cerr << "Failed to create GLFW window" << std::endl;
@@ -42,7 +40,7 @@ int main()
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
     {
         std::cerr << "Failed to initialize GLAD" << std::endl;
         return 0;
@@ -54,7 +52,8 @@ int main()
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGuiIO &io = ImGui::GetIO();
+    (void) io;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 
     // Setup Dear ImGui style
@@ -66,6 +65,8 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
+    std::future<void> loadFuture;
+
     while (true)
     {
         // Start the Dear ImGui frame
@@ -73,121 +74,136 @@ int main()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::Begin("Audio Player");
-        ImGui::Text("Audio Player");
-
-        if (ImGui::Button("Play"))
+        // 如果音频尚在加载，显示加载界面
+        if (loadFuture.valid())
         {
-            audio->Play();
-        }
-        ImGui::SameLine();
+            ImGui::Begin("Loading");
+            ImGui::Text("Loading...");
+            ImGui::End();
 
-        if (ImGui::Button("Pause"))
+            if (loadFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+            {
+                loadFuture.get();
+                loadFuture = std::future<void>();
+            }
+        } else
         {
-            audio->Pause();
-        }
-        ImGui::SameLine();
+            ImGui::Begin("Audio Player");
+            ImGui::Text("Audio Player");
 
-        if (ImGui::Button("Stop"))
-        {
-            audio->Stop();
-        }
+            if (ImGui::Button("Play"))
+            {
+                audio->Play();
+            }
+            ImGui::SameLine();
 
-        // Show timeline
-        auto currentTime = (float)audio->GetCurrentTime();
-        float lCurrentTime = currentTime;
-        if (ImGui::SliderFloat("Time", &currentTime, 0.0f, (float)audio->GetDuration(), "%.2f"))
-        {
-            // 更改进度小于1s不更新
-            if (std::abs(currentTime - lCurrentTime) > 1.f)
-                audio->SetCurrentTime(currentTime);
-        }
+            if (ImGui::Button("Pause"))
+            {
+                audio->Pause();
+            }
+            ImGui::SameLine();
 
+            if (ImGui::Button("Stop"))
+            {
+                audio->Stop();
+            }
 
-        float volume = audio->GetVolume();
-        if (ImGui::SliderFloat("Volume", &volume, 0.0f, 2.0f))
-        {
-            audio->SetVolume(volume);
-        }
-
-        float pitch = audio->GetPitch();
-        if (ImGui::SliderFloat("Pitch", &pitch, 0.0f, 2.0f))
-        {
-            audio->SetPitch(pitch);
-        }
-
-        bool isLoop = audio->IsLooping();
-        if (ImGui::Checkbox("Loop", &isLoop))
-        {
-            audio->SetLooping(isLoop);
-        }
-
-        static char buffer[256] = { 0 };
-        ImGui::InputText("Path", buffer, 256);
-
-        static bool isPCM = false;
-        static bool isWAV = false;
-        static bool isMP3 = false;
-        static bool isOGG = false;
-        static bool isFLAC = false;
-        // single select
-        if (ImGui::Checkbox("PCM", &isPCM))
-        {
-            isWAV = false;
-            isMP3 = false;
-            isOGG = false;
-            isFLAC = false;
-        }
-        ImGui::SameLine();
-        if (ImGui::Checkbox("WAV", &isWAV))
-        {
-            isPCM = false;
-            isMP3 = false;
-            isOGG = false;
-            isFLAC = false;
-        }
-        ImGui::SameLine();
-        if (ImGui::Checkbox("MP3", &isMP3))
-        {
-            isPCM = false;
-            isWAV = false;
-            isOGG = false;
-            isFLAC = false;
-        }
-        ImGui::SameLine();
-        if (ImGui::Checkbox("OGG", &isOGG))
-        {
-            isPCM = false;
-            isWAV = false;
-            isMP3 = false;
-            isFLAC = false;
-        }
-        ImGui::SameLine();
-        if (ImGui::Checkbox("FLAC", &isFLAC))
-        {
-            isPCM = false;
-            isWAV = false;
-            isMP3 = false;
-            isOGG = false;
-        }
+            // Show timeline
+            auto currentTime = (float) audio->GetCurrentTime();
+            float lCurrentTime = currentTime;
+            if (ImGui::SliderFloat("Time", &currentTime, 0.0f, (float) audio->GetDuration(), "%.2f"))
+            {
+                // 更改进度小于1s不更新
+                if (std::abs(currentTime - lCurrentTime) > 1.f)
+                    audio->SetCurrentTime(currentTime);
+            }
 
 
-        if (ImGui::Button("Load"))
-        {
-            if (isPCM)
-                audio->Load<PCMDecoder>(buffer);
-            else if (isWAV)
-                audio->Load<WAVDecoder>(buffer);
-            else if (isMP3)
-                audio->Load<MP3Decoder>(buffer);
-            else if (isOGG)
-                audio->Load<OGGDecoder>(buffer);
-            else if (isFLAC)
-                audio->Load<FLACDecoder>(buffer);
+            float volume = audio->GetVolume();
+            if (ImGui::SliderFloat("Volume", &volume, 0.0f, 2.0f))
+            {
+                audio->SetVolume(volume);
+            }
+
+            float pitch = audio->GetPitch();
+            if (ImGui::SliderFloat("Pitch", &pitch, 0.0f, 2.0f))
+            {
+                audio->SetPitch(pitch);
+            }
+
+            bool isLoop = audio->IsLooping();
+            if (ImGui::Checkbox("Loop", &isLoop))
+            {
+                audio->SetLooping(isLoop);
+            }
+
+            static char buffer[256] = {0};
+            ImGui::InputText("Path", buffer, 256);
+
+            static bool isPCM = false;
+            static bool isWAV = false;
+            static bool isMP3 = false;
+            static bool isOGG = false;
+            static bool isFLAC = false;
+            // single select
+            if (ImGui::Checkbox("PCM", &isPCM))
+            {
+                isWAV = false;
+                isMP3 = false;
+                isOGG = false;
+                isFLAC = false;
+            }
+            ImGui::SameLine();
+            if (ImGui::Checkbox("WAV", &isWAV))
+            {
+                isPCM = false;
+                isMP3 = false;
+                isOGG = false;
+                isFLAC = false;
+            }
+            ImGui::SameLine();
+            if (ImGui::Checkbox("MP3", &isMP3))
+            {
+                isPCM = false;
+                isWAV = false;
+                isOGG = false;
+                isFLAC = false;
+            }
+            ImGui::SameLine();
+            if (ImGui::Checkbox("OGG", &isOGG))
+            {
+                isPCM = false;
+                isWAV = false;
+                isMP3 = false;
+                isFLAC = false;
+            }
+            ImGui::SameLine();
+            if (ImGui::Checkbox("FLAC", &isFLAC))
+            {
+                isPCM = false;
+                isWAV = false;
+                isMP3 = false;
+                isOGG = false;
+            }
+
+
+            if (ImGui::Button("Load"))
+            {
+                if (isPCM)
+                    loadFuture = audio->LoadAsync<PCMDecoder>(buffer);
+                else if (isWAV)
+                    loadFuture = audio->LoadAsync<WAVDecoder>(buffer);
+                else if (isMP3)
+                    loadFuture = audio->LoadAsync<MP3Decoder>(buffer);
+                else if (isOGG)
+                    loadFuture = audio->LoadAsync<OGGDecoder>(buffer);
+                else if (isFLAC)
+                    loadFuture = audio->LoadAsync<FLACDecoder>(buffer);
+            }
+
+            ImGui::End();
+
         }
-
-
-        ImGui::End();
 
         // Rendering
         ImGui::Render();

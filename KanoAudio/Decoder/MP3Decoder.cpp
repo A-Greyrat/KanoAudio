@@ -17,13 +17,13 @@ namespace KanoAudio
         mpg123_handle *handle = mpg123_new(nullptr, nullptr);
         if (handle == nullptr)
         {
-            fprintf(stderr, "Unable to create mpg123 handle: %s\n", mpg123_strerror(handle));
+            KANO_AUDIO_LOG("[MP3Decoder]: Failed to create mpg123 handle.\n");
             return -1;
         }
 
         if (mpg123_open(handle, path) != MPG123_OK)
         {
-            fprintf(stderr, "Unable to open file: %s\n", mpg123_strerror(handle));
+            KANO_AUDIO_LOG("[MP3Decoder]: Failed to open file: %s\n", path);
             return -1;
         }
 
@@ -32,7 +32,7 @@ namespace KanoAudio
         int channels, encoding;
         if (mpg123_getformat(handle, &rate, &channels, &encoding) != MPG123_OK)
         {
-            fprintf(stderr, "Unable to get format: %s\n", mpg123_strerror(handle));
+            KANO_AUDIO_LOG("[MP3Decoder]: Unable to get format: %s\n", mpg123_strerror(handle));
             return -1;
         }
 
@@ -44,7 +44,7 @@ namespace KanoAudio
         off_t length = mpg123_length(handle);
         if (length == MPG123_ERR)
         {
-            fprintf(stderr, "Unable to get length: %s\n", mpg123_strerror(handle));
+            KANO_AUDIO_LOG("[MP3Decoder]: Unable to get length: %s\n", mpg123_strerror(handle));
             return -1;
         }
 
@@ -54,7 +54,7 @@ namespace KanoAudio
         data_ = std::shared_ptr<uint8_t[]>(new uint8_t[size_]);
         if (mpg123_read(handle, data_.get(), size_, nullptr) != MPG123_OK)
         {
-            fprintf(stderr, "Unable to read data: %s\n", mpg123_strerror(handle));
+            KANO_AUDIO_LOG("[MP3Decoder]: Unable to read data: %s\n", mpg123_strerror(handle));
             return -1;
         }
 
